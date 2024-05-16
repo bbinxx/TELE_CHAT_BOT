@@ -18,8 +18,9 @@ function createChatRoom(user1, user2) {
   waitingUsers.splice(waitingUsers.indexOf(user1), 1);
   waitingUsers.splice(waitingUsers.indexOf(user2), 1);
 
-  sendMessage(user1, `You've been paired with another user! Chat ID: ${chatId}`);
-  sendMessage(user2, `You've been paired with another user! Chat ID: ${chatId}`);
+  statusMessage(user1, `You've been paired with another user! Chat ID: ${chatId}`);
+  
+  statusMessage(user2, `You've been paired with another user! Chat ID: ${chatId}`);
 
   // Implement logic to handle messages within the chat room (using chatId)
   handleChatMessages(chatId);
@@ -27,6 +28,16 @@ function createChatRoom(user1, user2) {
 
 // Function to send message to a specific user
 function sendMessage(userId, message) {
+ // bot.sendMessage(userId, message);
+  bot.sendMessage(userId,message, {
+    "reply_markup": {
+        "keyboard": [["/stop"], ["I'm robot"]]
+    }
+});
+
+}
+
+function statusMessage(userId, message) {
   bot.sendMessage(userId, message);
 }
 
@@ -45,7 +56,7 @@ function handleChatMessages(chatId) {
 }
 
 // Handle incoming messages
-bot.on('message', (msg) => {
+bot.onText(/\/start/, (msg) => {
   const userId = msg.chat.id;
   const username = msg.chat.username;
 
@@ -56,7 +67,7 @@ bot.on('message', (msg) => {
       createChatRoom(userId, partnerId);
     } else {
       waitingUsers.push(userId);
-      sendMessage(userId, `Hi ${username}! You've joined the queue. You'll be paired with another user soon.`);
+      statusMessage(userId, `Hi ${username}! You've joined the queue. You'll be paired with another user soon.`);
     }
   }
 
@@ -66,3 +77,5 @@ bot.on('message', (msg) => {
   console.log(activeChats);
   console.log("------------------------------");
 });
+
+

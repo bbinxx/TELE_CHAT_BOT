@@ -58,11 +58,7 @@ function handleChatMessages(chatId) {
 // Handle incoming messages
 
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "Welcome", {
-    "reply_markup": {
-        "keyboard": [["/search"]]
-    }
-});
+  bot.sendMessage(msg.chat.id, "Welcome \n /search");
 });
 
 bot.onText(/\/find/, (msg) => {

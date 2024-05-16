@@ -1,88 +1,68 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
 
-const users = {}; // Object to store waiting users
+const waitingUsers = []; // Queue for users waiting for a chat room
+const activeChats = {}; // Object to store active chat rooms (key: chat ID, value: array of user IDs)
 
 // Replace with your actual Telegram bot token
 const token = process.env.TOKEN;
 
-const bot = new TelegramBot(token);
+const bot = new TelegramBot(token, {polling: true});
 
-// Function to handle new chat participants
-function handleNewUser(chatId) {
-  users[chatId] = { chatId, waiting: true }; // Add user to waiting list
-  console.log(`User with chat ID ${chatId} joined the queue.`);
-  bot.sendMessage(chatId, `You've been added to the queue. We'll connect you with another user as soon as possible.`);
+// Function to create a new chat room
+function createChatRoom(user1, user2) {
+  const chatId = Math.random().toString(36).substring(2, 15); // Generate unique chat ID
+  activeChats[chatId] = [user1, user2];
 
-  // Check if there's another user waiting
-  if (Object.values(users).some(user => user.waiting)) {
-    const user1 = users[chatId];
-    const user2 = Object.values(users).find(user => user.waiting && user.chatId !== chatId);
+  // Remove users from waiting queue
+  waitingUsers.splice(waitingUsers.indexOf(user1), 1);
+  waitingUsers.splice(waitingUsers.indexOf(user2), 1);
 
-    if (user2) {
-      console.log(`Matching user ${chatId} with user ${user2.chatId}`);
+  sendMessage(user1, `You've been paired with another user! Chat ID: ${chatId}`);
+  sendMessage(user2, `You've been paired with another user! Chat ID: ${chatId}`);
 
-      // Send starting message to both users, indicating temporary anonymity
-      bot.sendMessage(user1.chatId, `Hi! You've been matched for an anonymous chat. Please note that true anonymity cannot be guaranteed. Remember to be respectful and responsible during your conversation.`);
-      bot.sendMessage(user2.chatId, `Hi! You've been matched for an anonymous chat. Please note that true anonymity cannot be guaranteed. Remember to be respectful and responsible during your conversation.`);
-
-      // Remove users from waiting list and enable messaging
-      delete users[user1.chatId].waiting;
-      delete users[user2.chatId].waiting;
-
-      // Forward messages between users (avoid storing messages for privacy)
-      bot.on('message', (msg) => {
-        const fromChatId = msg.chat.id;
-        const message = msg.text;
-
-        if (!users[fromChatId] || !users[fromChatId].waiting) {
-          return; // Not a relevant user in this chat
-        }
-
-        const partnerChatId = Object.keys(users).find(id => id !== fromChatId);
-        if (!partnerChatId) {
-          return; // Partner not found or no longer waiting
-        }
-
-        console.log(`Forwarding message from ${fromChatId} to ${partnerChatId}`);
-        bot.sendMessage(partnerChatId, message);
-      });
-    }
-  } else {
-    console.log(`User with chat ID ${chatId} is still waiting for a partner.`);
-    bot.sendMessage(chatId, `You've been added to the queue. We'll connect you with another user as soon as possible.`);
-  }
+  // Implement logic to handle messages within the chat room (using chatId)
+  handleChatMessages(chatId);
 }
 
+// Function to send message to a specific user
+function sendMessage(userId, message) {
+  bot.sendMessage(userId, message);
+}
 
-bot.onText(/\/start/, (msg) => {
-    bot.sendMessage(msg.chat.id, "Welcome \n /new \n /stop");
-    });
+// Function to handle messages within a chat room
+function handleChatMessages(chatId) {
+  bot.on('message', (msg) => {
+    const userId = msg.chat.id;
+    const messageText = msg.text;
+
+    // Check if user belongs to the chat room
+    if (activeChats[chatId].includes(userId)) {
+      const partnerId = activeChats[chatId].filter(id => id !== userId)[0];
+      sendMessage(partnerId, `${userId}: ${messageText}`); // Send message to partner
+    }
+  });
+}
 
 // Handle incoming messages
-bot.onText(/\/new/, (msg) => {
-  const chatId = msg.chat.id;
-  if (!users[chatId]) {
-    handleNewUser(chatId);
-  } else if (users[chatId].waiting) {
-    // User already in queue, ignore message (could add further instructions)
-  } else {
-    // User is currently chatting, handle message forwarding as described above
-    // (code omitted for brevity, refer to forwarding logic within handleNewUser)
+bot.on('message', (msg) => {
+  const userId = msg.chat.id;
+  const username = msg.chat.username;
+
+  if (!Object.values(activeChats).flat().includes(userId)) {
+    // User not in a chat room, follow pairing logic
+    if (waitingUsers.length === 1 && waitingUsers[0] !== userId) {
+      const partnerId = waitingUsers.shift();
+      createChatRoom(userId, partnerId);
+    } else {
+      waitingUsers.push(userId);
+      sendMessage(userId, `Hi ${username}! You've joined the queue. You'll be paired with another user soon.`);
+    }
   }
-});
 
-// Handle exiting chats (optional)
-bot.on('left_chat_member', (msg) => {
-  const leftChatId = msg.chat.id;
-  if (users[leftChatId]) {
-    delete users[leftChatId];
-    console.log(`User with chat ID ${leftChatId} left the chat.`);
-
-    // Optionally, notify the partner if they were still connected
-  }
-});
-
-bot.startPolling().then(() => {
-  console.log(`Bot started successfully!`);
+  // Optional: Logging code for debugging
+  console.log("------------------------------");
+  console.log(waitingUsers);
+  console.log(activeChats);
+  console.log("------------------------------");
 });

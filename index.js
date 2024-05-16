@@ -56,7 +56,40 @@ function handleChatMessages(chatId) {
 }
 
 // Handle incoming messages
+
 bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, "Welcome", {
+    "reply_markup": {
+        "keyboard": [["/search"]]
+    }
+});
+});
+
+bot.onText(/\/find/, (msg) => {
+  bot.sendMessage(msg.chat.id, "Finding ", {
+    "reply_markup": {
+        "keyboard": [["/stopsearching"]]
+    }
+});
+})
+
+bot.onText(/\/stopsearching/, (msg) => {
+  const userId = msg.chat.id;
+  const userIndex = waitingUsers.indexOf(userId);
+
+  if (userIndex > -1) {
+    waitingUsers.splice(userIndex, 1);
+  }
+  
+  bot.sendMessage(userId, "Search stopped!", {
+    "reply_markup": {
+      "keyboard": [["/search"]]
+    }
+  });
+})
+
+
+bot.onText(/\/search/, (msg) => {
   const userId = msg.chat.id;
   const username = msg.chat.username;
 
@@ -65,17 +98,39 @@ bot.onText(/\/start/, (msg) => {
     if (waitingUsers.length === 1 && waitingUsers[0] !== userId) {
       const partnerId = waitingUsers.shift();
       createChatRoom(userId, partnerId);
+    }else if(waitingUsers[0] == userId){
+     // statusMessage(userId, `You are already on queue`);
+      bot.sendMessage(userId, `You are already on queue`, {
+        "reply_markup": {
+            "keyboard": [["/stopsearching"]]
+        }
+    });
     } else {
       waitingUsers.push(userId);
-      statusMessage(userId, `Hi ${username}! You've joined the queue. You'll be paired with another user soon.`);
+    //  statusMessage(userId, `Hi ${username}! You've joined the queue. You'll be paired with another user soon.`);
+      bot.sendMessage(userId, `Hi ${username}! You've joined the queue. You'll be paired with another user soon.`, {
+        "reply_markup": {
+            "keyboard": [["/stopsearching"]]
+        }
+    });
     }
   }
 
-  // Optional: Logging code for debugging
-  console.log("------------------------------");
-  console.log(waitingUsers);
-  console.log(activeChats);
-  console.log("------------------------------");
+
+});
+
+bot.onText(/\/stop/, (msg) => {
+
+
 });
 
 
+bot.on('message', (msg) => {
+
+    // Optional: Logging code for debugging
+    console.log("------------------------------");
+    console.log("waitingUsers:",waitingUsers);
+    console.log("activeChats",activeChats);
+    console.log("------------------------------");
+
+});

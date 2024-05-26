@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Notifications</title>
+  </head>
+<body>
+  <h1>Admin Panel - User Notifications</h1>
+  <form id="notification">
+
+  
+
+<select name="uid" id="uid">
+  <option value="all">Send To all UID</option>
+  
+  <% for (const user of users) { %>
+   
+    <option value=<%= user.UID %>><%= user.UID %></option>
+
+  <% } %>
+</select><br>
+    <label for="message">Message:</label><br>
+    <textarea name="message" id="message" rows="5" required></textarea>
+    <br>
+    <button type="submit">Send Notification</button>
+  </form>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
+

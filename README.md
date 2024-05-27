@@ -1,1 +1,2 @@
-# TELE_CHAT_BOT
+# Telegram bot for chatting with anonymous users
+*Bugs exist

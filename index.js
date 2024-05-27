@@ -126,11 +126,10 @@ function createChatRoom(user1, user2) {
   // Remove users from waiting queue
   waitingUsers.splice(waitingUsers.indexOf(user1), 1);
   waitingUsers.splice(waitingUsers.indexOf(user2), 1);
-
-  console.log("------------------------------");
-    console.log("waitingUsers:",waitingUsers);
-    console.log("activeChats",activeChats);
-    console.log("------------------------------");
+   console.log("------------------------------");
+   console.log("waitingUsers:",waitingUsers);
+   console.log("activeChats",activeChats);
+   console.log("------------------------------");
   statusMessage(user1, `You've been paired with another user! Chat ID: ${chatId}`);
   statusMessage(user2, `You've been paired with another user! Chat ID: ${chatId}`);
 

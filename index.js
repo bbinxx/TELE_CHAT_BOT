@@ -190,6 +190,7 @@ bot.onText(/\/start/, async (msg) => {
   }
   bot.sendMessage(msg.chat.id, "Welcome \n /search");
 });
+// /Stop
 
 bot.onText(/\/stopsearching/, (msg) => {
   const userId = msg.chat.id;
